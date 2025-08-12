@@ -1,27 +1,35 @@
 pipeline {
     agent any
-    options {
-        skipStagesAfterUnstable()
-    }
     stages {
+        stage('Clean Up') {
+            steps {
+                deleteDir()
+            }
+        }
+        stage('Clone Repo') {
+            steps {
+                bat 'git clone https://github.com/Mounika77754/simple-java-maven-app.git'
+            }
+        }
+        stage('Update Java Requirement') {
+            steps {
+                dir('simple-java-maven-app') {
+                    powershell '''(Get-Content pom.xml) -replace "\\[21,\\)", "[17,)" | Set-Content pom.xml'''
+                }
+            }
+        }
         stage('Build') {
             steps {
-                bat 'mvn -B -DskipTests clean package'
+                dir('simple-java-maven-app') {
+                    bat 'mvn clean package -DskipTests'
+                }
             }
         }
         stage('Test') {
             steps {
-                bat 'mvn test'
-            }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
+                dir('simple-java-maven-app') {
+                    bat 'mvn test'
                 }
-            }
-        }
-        stage('Deliver') { 
-            steps {
-                bat 'jenkins\\scripts\\deliver.bat' // or deliver.sh if you have Git Bash installed
             }
         }
     }
